@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.use_cases.create_analysis import CreateAnalysisUseCase
 from app.application.use_cases.get_analysis import GetAnalysisUseCase
+from app.application.use_cases.list_analyses import ListAnalysesUseCase
 from app.application.use_cases.update_status import UpdateStatusUseCase
 from app.domain.exceptions import (
     AnalysisNotFoundError,
@@ -17,6 +18,7 @@ from app.infrastructure.database.session import get_session
 from app.infrastructure.messaging.rabbitmq_publisher import RabbitMQPublisher
 from app.infrastructure.storage.minio_storage import MinIOStorage
 from app.presentation.schemas import (
+    AnalysisListResponse,
     AnalysisStatusResponse,
     HealthResponse,
     UpdateStatusRequest,
@@ -31,6 +33,32 @@ router = APIRouter()
 @router.get("/health", response_model=HealthResponse, tags=["health"])
 async def health() -> HealthResponse:
     return HealthResponse(status="healthy", service="upload-service")
+
+
+@router.get("/uploads", response_model=AnalysisListResponse, tags=["uploads"])
+async def list_analyses(
+    session: AsyncSession = Depends(get_session),
+) -> AnalysisListResponse:
+    error_id = str(uuid.uuid4())
+    try:
+        use_case = ListAnalysesUseCase(AnalysisRepository(session))
+        analyses = await use_case.execute()
+        items = [
+            AnalysisStatusResponse(
+                analysis_id=str(a.id),
+                status=a.status,
+                filename=a.filename,
+                created_at=a.created_at,
+                updated_at=a.updated_at,
+            )
+            for a in analyses
+        ]
+        return AnalysisListResponse(items=items, total=len(items))
+    except Exception:
+        logger.exception("Unexpected error listing analyses", extra={"error_id": error_id})
+        raise HTTPException(
+            status_code=500, detail=f"Internal server error. Reference: {error_id}"
+        )
 
 
 @router.post("/uploads", status_code=202, response_model=UploadResponse, tags=["uploads"])

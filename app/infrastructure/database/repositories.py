@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from sqlalchemy import select, update
@@ -52,6 +52,12 @@ class AnalysisRepository(IAnalysisRepository):
         )
         await self._session.commit()
         return await self.get_by_id(analysis_id)
+
+    async def list_all(self) -> List[AnalysisProcess]:
+        result = await self._session.execute(
+            select(AnalysisProcessModel).order_by(AnalysisProcessModel.created_at.desc())
+        )
+        return [self._to_entity(m) for m in result.scalars().all()]
 
     @staticmethod
     def _to_entity(model: AnalysisProcessModel) -> AnalysisProcess:

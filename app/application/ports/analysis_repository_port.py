@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 from app.domain.entities import AnalysisProcess
@@ -22,4 +22,8 @@ class IAnalysisRepository(ABC):
         status: AnalysisStatus,
         error_message: Optional[str] = None,
     ) -> Optional[AnalysisProcess]:
+        ...
+
+    @abstractmethod
+    async def list_all(self) -> List[AnalysisProcess]:
         ...

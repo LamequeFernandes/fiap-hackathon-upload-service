@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -23,6 +23,11 @@ class AnalysisStatusResponse(BaseModel):
 class UpdateStatusRequest(BaseModel):
     status: AnalysisStatus
     error_message: Optional[str] = None
+
+
+class AnalysisListResponse(BaseModel):
+    items: List[AnalysisStatusResponse]
+    total: int
 
 
 class HealthResponse(BaseModel):
