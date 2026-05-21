@@ -1,13 +1,15 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Security, UploadFile
+from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.application.use_cases.create_analysis import CreateAnalysisUseCase
 from app.application.use_cases.get_analysis import GetAnalysisUseCase
 from app.application.use_cases.list_analyses import ListAnalysesUseCase
 from app.application.use_cases.update_status import UpdateStatusUseCase
+from app.core.config import settings
 from app.domain.exceptions import (
     AnalysisNotFoundError,
     FileTooLargeError,
@@ -28,6 +30,14 @@ from app.presentation.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+_internal_key_header = APIKeyHeader(name="X-Internal-API-Key", auto_error=False)
+
+
+async def _verify_internal_auth(key: str = Security(_internal_key_header)) -> None:
+    """Validates the shared secret sent by internal services (e.g. processing-service)."""
+    if key != settings.internal_api_key:
+        raise HTTPException(status_code=403, detail="Forbidden: invalid internal API key")
 
 
 @router.get("/health", response_model=HealthResponse, tags=["health"])
@@ -127,6 +137,7 @@ async def get_analysis(
     "/uploads/{analysis_id}/status",
     response_model=AnalysisStatusResponse,
     tags=["uploads"],
+    dependencies=[Depends(_verify_internal_auth)],
 )
 async def update_status(
     analysis_id: str,

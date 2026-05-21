@@ -1,0 +1,13 @@
+[run]
+source = app
+omit =
+    app/infrastructure/*
+    app/main.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise NotImplementedError
+    if TYPE_CHECKING:
+    ^\s*pass$

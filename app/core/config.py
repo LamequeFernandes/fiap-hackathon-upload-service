@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     rabbitmq_exchange: str = "arch_analyzer"
     rabbitmq_queue: str = "analysis.process"
     rabbitmq_routing_key: str = "analysis.process"
+    # Shared secret used to authenticate calls from internal services.
+    # Must be set to a strong random value in production via INTERNAL_API_KEY env var.
+    internal_api_key: str = "dev-internal-api-key-change-in-production"
 
     model_config = {"env_file": ".env"}
 
