@@ -24,6 +24,20 @@ Responsável por receber arquivos de diagramas de arquitetura, validá-los, arma
 
 `PDF`, `PNG`, `JPG`, `JPEG` — validados por magic bytes via biblioteca `filetype`.
 
+## Diagrama
+
+```mermaid
+flowchart TD
+    A([POST /uploads]) --> B{Magic bytes<br>válidos?}
+    B -- não --> C([400 Bad Request])
+    B -- sim --> D{Tamanho<br>≤ MAX_FILE_SIZE_MB?}
+    D -- não --> E([413 Payload Too Large])
+    D -- sim --> F[Salvar no MinIO<br>nome = UUID]
+    F --> G[Registrar no PostgreSQL<br>status = RECEBIDO]
+    G --> H[Publicar no RabbitMQ<br>exchange: arch_analyzer]
+    H --> I([202 Accepted · analysis_id])
+```
+
 ## Variáveis de ambiente
 
 | Variável | Padrão | Descrição |
